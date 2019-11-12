@@ -12,7 +12,7 @@ class YOLOLayer(nn.Module):
         super(YOLOLayer, self).__init__()
         self.anchors = anchors
         self.mse_loss = nn.MSELoss(reduction='elementwise_mean')
-        self.ce_loss = nn.CrossEntropyLoss() 
+        self.ce_loss = nn.CrossEntropyLoss()
         self.lambda_coord = 5
         self.lambda_noobj = 0.5
     
@@ -42,12 +42,19 @@ class YOLOLayer(nn.Module):
             ByteTensor = torch.cuda.ByteTensor
             scaled_anchors = scaled_anchors.type(FloatTensor)
         
-        grid_x = torch.arange(grid_size).repeat(grid_size, 1).view([1, 1, grid_size, grid_size]).type(FloatTensor)
-        grid_y = torch.arange(grid_size).repeat(grid_size, 1).t().view([1, 1, grid_size, grid_size]).type(FloatTensor)
-          
+        grid_x = torch.arange(grid_size).repeat(grid_size, 1).view([1, 1, grid_size, grid_size])
+        grid_x = grid_x.type('torch.FloatTensor')
+        grid_y = torch.arange(grid_size).repeat(grid_size, 1).t().view([1, 1, grid_size, grid_size])
+        grid_y = grid_y.type('torch.FloatTensor')
+        
+        
         anchor_w = scaled_anchors[:, 0:1].view((1, num_anchors, 1, 1))
         anchor_h = scaled_anchors[:, 1:2].view((1, num_anchors, 1, 1))
-        pred_boxes = FloatTensor(prediction[..., :4].shape)
+        
+        pred_boxes = torch.FloatTensor(prediction[..., :4].shape)
+        #pred_boxes = prediction[..., :4].shape
+        #pred_boxes = pred_boxes.type('torch.FloatTensor')
+        
         pred_boxes[..., 0] = x.data + grid_x
         pred_boxes[..., 1] = y.data + grid_y
         pred_boxes[..., 2] = torch.exp(w.data) * anchor_w

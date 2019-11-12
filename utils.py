@@ -8,8 +8,8 @@ import cv2
 import math
 import os
 from skimage.transform import resize
-from model.EmptyLayer import EmptyLayer
-from model.YOLOLayer import YOLOLayer
+import darknet
+import yoloLayer
 
 
 def parseModelConfig(model_cfg_path):
@@ -219,6 +219,13 @@ def parseDataConfig(data_cfg_path):
     return options
 
 def buildTargets(pred_boxes,pred_conf,pred_cls,targets,anchors,num_anchors,num_classes,grid_size,ignore_thres,img_size):
+    print("\nType of Targets : ",type(targets),'\n')
+    print("\Targets : ",targets,'\n')
+    #import sys
+    #sys.exit()
+    print ("here")
+    print (targets.size(0))
+  
     batch_size = targets.size(0)
     mask = torch.zeros(batch_size,num_anchors,grid_size,grid_size)
     conf_mask = torch.ones(batch_size,num_anchors,grid_size,grid_size)

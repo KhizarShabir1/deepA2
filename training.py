@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+
 
 from __future__ import print_function, division
 import time
@@ -12,7 +12,6 @@ import argparse
 import os 
 import os.path as osp
 from darknet import Darknet
-import yolov3loss
 import pickle as pkl
 import pandas as pd
 import random
@@ -21,7 +20,9 @@ from skimage import io, transform
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
-
+from dataLoadFile import returnImageNames
+from dataLoadFile import CatDogDataset
+from dataLoadFile import read_content
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -42,7 +43,7 @@ def arg_parse():
     parser.add_argument("--det", dest = 'det', help = 
                         "Image / Directory to store detections to",
                         default = "det", type = str)
-    parser.add_argument("--bs", dest = "bs", help = "Batch size", default = 64)
+    parser.add_argument("--bs", dest = "bs", help = "Batch size", default = 4)
     parser.add_argument("--confidence", dest = "confidence", help = "Object Confidence to filter predictions", default = 0.5)
     parser.add_argument("--nms_thresh", dest = "nms_thresh", help = "NMS Threshhold", default = 0.4)
     parser.add_argument("--cfg", dest = 'cfgfile', help = 
@@ -75,6 +76,8 @@ num_classes = 2
 
 #Set up the neural network
 print("Loading network.....")
+
+
 model = Darknet(args.cfgfile)
 
 model.net_info["height"] = args.reso
@@ -112,16 +115,15 @@ for name in names:
     except:        
         continue
 
+
 annotArray=annotArray[1:]
 print (len(annotArray))
 print (len(newNames))
 import torch.optim as optim
 
 cd_dataset = CatDogDataset(newNames,annotArray,
-                                    root_dir='images/',
-                                transform=transforms.Compose([ToTensor()])
-                                )
-
+                                    root_dir='images/')
+                                
 
 
 '''
@@ -140,34 +142,38 @@ for i in range(len(cd_dataset)):
 optimizer = optim.Adam(model.parameters())
 dataloader = DataLoader(cd_dataset, batch_size=4, shuffle=True)
 
+
 print (dataloader)
+
  #trainin the model
 for i_batch, sample_batched in enumerate(dataloader,1):
-    
+ 
+#    import sys
+#    sys.exit()
     print ("data getting load")
     
     print(i_batch, sample_batched['image'].size(),sample_batched['bBox'].size())
     
-    loss=model.forward(sample_batched['image'] ,sample_batched['bBox'].size(), None)
+    loss=model.forward(sample_batched['image'] ,sample_batched['bBox'], None)
+   
     
     
-   optimizer.zero_grad()
+    optimizer.zero_grad()
 
-   epoch_loss += loss.item()
-   loss.backward()
-   optimizer.step()
+    epoch_loss += loss.item()
+    loss.backward()
+    optimizer.step()
    
  #testing the model 
     
-   for i_batch, sample_batched in enumerate(dataloader,1):
+for i_batch, sample_batched in enumerate(dataloader,1):
+    break
        
-       
-       print ("data getting load")
-        
-       print(i_batch, sample_batched['image'].size(),sample_batched['bBox'].size())
-        
-       prediction=model.forward(sample_batched['image'] ,None, None)
-       print (prediction)
+    print ("data getting load")
+    print(i_batch, sample_batched['image'].size(),sample_batched['bBox'].size())
+    prediction=model.forward(sample_batched['image'] ,None, None)
+    
+    print (prediction)
     
 
    
